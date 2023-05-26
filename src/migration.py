@@ -1,6 +1,5 @@
 import sqlite3
 import os
-import threading
 
 from maisonpaul import execute_sql
 
@@ -99,29 +98,17 @@ def main():
         "station3": ["temp-station3.txt", "humidity-station3.txt"]
     }
 
-    # Threads
-    threads = []
+    # Exécution de la fonction pour les actuators
+    extract_Actuators_entries(old_actuators)
 
-    # Construction du thread pour les actuators
-    thread_actuators = threading.Thread(target=extract_Actuators_entries, args=(old_actuators,))
-    threads.append(thread_actuators)
-
-    # Construction des threads pour les capteurs
+    # Exécution des fonctions pour les capteurs
     for sensor, files in sensors.items():
         for file in files:
             old_file = os.path.join(olddbs_directory, file)
-            thread = threading.Thread(target=extract_TemperatureOrHumiditity_entries, args=(old_file, sensor))
-            threads.append(thread)
-
-    # Lancement de tous les threads
-    for thread in threads:
-        thread.start()
-
-    # Attente que les threads aient terminé
-    for thread in threads:
-        thread.join()
+            extract_TemperatureOrHumiditity_entries(old_file, sensor)
 
     return
+
 
 if __name__ == "__main__":
     main()
