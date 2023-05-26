@@ -19,30 +19,6 @@ parser.add_argument('--weatherapplon', dest='weatherapplon', type=str, help='Lon
 
 args = parser.parse_args()
 
-# Client MQTT creation
-client = mqtt.Client("MaisonPaul-backend-python")
-
-# Connection to the MQTT broker
-print("Connecting to the MQTT broker...")
-client.username_pw_set(args.mqttusername, args.mqttpwd)
-client.connect(args.mqttaddress, port=1883)
-print("Connected!")
-
-# Topic subscription
-print("Subscribing to MQTT topics...")
-client.subscribe("mainroom/heater1")
-client.subscribe("mainroom/heater2")
-client.subscribe("bedroom/heater")
-client.subscribe("bedroom/heater-mode")
-client.subscribe("watercloset/heater")
-client.subscribe("watercloset/heater-mode")
-client.subscribe("station1/temperature")
-client.subscribe("station1/humidity")
-client.subscribe("station2/temperature")
-client.subscribe("station2/humidity")
-client.subscribe("local-current-weather")
-print("Subscription complete!")
-
 # Connection to the SQLite3 database and creation of the tables if they don't exist
 print("Initializing SQL database...")
 # Chemin vers le répertoire contenant le fichier maisonpaul.db
@@ -127,14 +103,7 @@ def on_message(client, userdata, msg):
     else:
         print("MQTT topic not recognized")
 
-# Registering callback function
-client.on_message = on_message
-
-# MQTT client loop
-client.loop_start()
-
 stop_thread = False
-
 def background_request():
     global stop_thread
     while not stop_thread:
@@ -161,20 +130,51 @@ def background_request():
             if stop_thread:
                 break
 
-# Création un thread de fond pour exécuter la fonction de requête en arrière-plan
-thread = threading.Thread(target=background_request)
+if __name__ == "__main__":
+    # Client MQTT creation
+    client = mqtt.Client("MaisonPaul-backend-python")
 
-# Démarrage du thread
-thread.start()
+    # Connection to the MQTT broker
+    print("Connecting to the MQTT broker...")
+    client.username_pw_set(args.mqttusername, args.mqttpwd)
+    client.connect(args.mqttaddress, port=1883)
+    print("Connected!")
 
-while not stop_thread:
-    try:
-        var = input()
-    except KeyboardInterrupt:
-        print("MAIN-LOOP : KeyboardInterrupt !")
-        stop_thread = True
+    # Topic subscription
+    print("Subscribing to MQTT topics...")
+    client.subscribe("mainroom/heater1")
+    client.subscribe("mainroom/heater2")
+    client.subscribe("bedroom/heater")
+    client.subscribe("bedroom/heater-mode")
+    client.subscribe("watercloset/heater")
+    client.subscribe("watercloset/heater-mode")
+    client.subscribe("station1/temperature")
+    client.subscribe("station1/humidity")
+    client.subscribe("station2/temperature")
+    client.subscribe("station2/humidity")
+    client.subscribe("local-current-weather")
+    print("Subscription complete!")
 
-thread.join()
+    # Registering callback function
+    client.on_message = on_message
 
-client.loop_stop()
-client.disconnect()
+    # MQTT client loop
+    client.loop_start()
+
+    # Création un thread de fond pour exécuter la fonction de requête en arrière-plan
+    thread = threading.Thread(target=background_request)
+
+    # Démarrage du thread
+    thread.start()
+
+    while not stop_thread:
+        try:
+            var = input()
+        except KeyboardInterrupt:
+            print("MAIN-LOOP : KeyboardInterrupt !")
+            stop_thread = True
+
+    thread.join()
+
+    client.loop_stop()
+    client.disconnect()
