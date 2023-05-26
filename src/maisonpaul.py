@@ -58,16 +58,14 @@ cursor.execute("CREATE TABLE IF NOT EXISTS ActuatorsTable (id INTEGER PRIMARY KE
 conn.close()
 print("SQL database initialized!")
 
-def AddEntryToActuatorsTable(actuatorid, value, action):
-    print(f"New entry to actuators table : {actuatorid}, {value}, {action}")
+def execute_sql(sql, params):
     print("Connecting to database...")
     conn = None
     try:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
-        sql_request = "INSERT INTO ActuatorsTable (actuatorid, value, action, date) VALUES (?, ?, ?, datetime('now'))"
-        cursor.execute(sql_request, (actuatorid, value, action))
-        print(f"SQL Request : {sql_request}")
+        cursor.execute(sql, params)
+        print(f"SQL Request : {sql}")
         print("Executing SQL request...")
         conn.commit()
     except sqlite3.Error as e:
@@ -76,44 +74,24 @@ def AddEntryToActuatorsTable(actuatorid, value, action):
         if conn is not None:
             conn.close()
         print("Done!")
+
+def AddEntryToActuatorsTable(actuatorid, value, action):
+    print(f"New entry to actuators table : {actuatorid}, {value}, {action}")
+    sql = "INSERT INTO ActuatorsTable (actuatorid, value, action, date) VALUES (?, ?, ?, datetime('now'))"
+    params = (actuatorid, value, action)
+    execute_sql(sql, params)
 
 def AddEntryToTemperatureTable(sensorid, temperature):
     print(f"New entry to temperature table : {sensorid}, {temperature}")
-    print("Connecting to database...")
-    conn = None
-    try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        sql_request = "INSERT INTO TemperatureTable (sensorid, temperature, date) VALUES (?, ?, datetime('now'))"
-        cursor.execute(sql_request, (sensorid, temperature))
-        print(f"SQL Request : {sql_request}")
-        print("Executing SQL request...")
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"An error occurred: {e}")
-    finally:
-        if conn is not None:
-            conn.close()
-        print("Done!")
+    sql = "INSERT INTO TemperatureTable (sensorid, temperature, date) VALUES (?, ?, datetime('now'))"
+    params = (sensorid, temperature)
+    execute_sql(sql, params)
 
 def AddEntryToHumidityTable(sensorid, humidity):
     print(f"New entry to humidity table : {sensorid}, {humidity}")
-    print("Connecting to database...")
-    conn = None
-    try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        sql_request = "INSERT INTO HumidityTable (sensorid, humidity, date) VALUES (?, ?, datetime('now'))"
-        cursor.execute(sql_request, (sensorid, humidity))
-        print(f"SQL Request : {sql_request}")
-        print("Executing SQL request...")
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"An error occurred: {e}")
-    finally:
-        if conn is not None:
-            conn.close()
-        print("Done!")
+    sql = "INSERT INTO HumidityTable (sensorid, humidity, date) VALUES (?, ?, datetime('now'))"
+    params = (sensorid, humidity)
+    execute_sql(sql, params)
 
 # Variable to store generated UUID
 #request_id = None
