@@ -91,60 +91,35 @@ def main():
     # Fichier contenant tous les changements des infos radiateurs
     old_actuators = os.path.join(olddbs_directory, 'heat-controls-history.txt')
 
-    # Fichiers contenant les informations de température et d'humidité extérieure
-    old_outdoor_temperature = os.path.join(olddbs_directory, 'temp-outdoor.txt')
-    old_outdoor_humidity = os.path.join(olddbs_directory, 'humidity-outdoor.txt')
+    # Noms des capteurs et leurs fichiers associés
+    sensors = {
+        "outdoor": ["temp-outdoor.txt", "humidity-outdoor.txt"],
+        "station1": ["temp-station1.txt", "humidity-station1.txt"],
+        "station2": ["temp-station2.txt", "humidity-station2.txt"],
+        "station3": ["temp-station3.txt", "humidity-station3.txt"]
+    }
 
-    # Fichiers contenant les informations de température et d'humidité dans la pièce principale
-    old_station1_temperature = os.path.join(olddbs_directory, 'temp-station1.txt')
-    old_station1_humidity = os.path.join(olddbs_directory, 'humidity-station1.txt')
+    # Threads
+    threads = []
 
-    # Fichiers contenant les informations de température et d'humidité dans la chambre
-    old_station2_temperature = os.path.join(olddbs_directory, 'temp-station2.txt')
-    old_station2_humidity = os.path.join(olddbs_directory, 'humidity-station2.txt')
+    # Construction du thread pour les actuators
+    thread_actuators = threading.Thread(target=extract_Actuators_entries, args=(old_actuators,))
+    threads.append(thread_actuators)
 
-    # Fichiers contenant les informations de température et d'humidité dans la salle de bain (pas utilisée)
-    old_station3_temperature = os.path.join(olddbs_directory, 'temp-station3.txt')
-    old_station3_humidity = os.path.join(olddbs_directory, 'humidity-station3.txt')
-
-    # Noms des capteurs
-    outdoor_sensorid = "outdoor"
-    station1_sensorid = "station1"
-    station2_sensorid = "station2"
-    station3_sensorid = "station3"
-
-    # Construction des threads
-    thread_actuators = threading.Thread(target=extract_Actuators_entries, args=(old_actuators))
-    thread_outdoor_temp = threading.Thread(target=extract_TemperatureOrHumiditity_entries, args=(old_outdoor_temperature, outdoor_sensorid))
-    thread_outdoor_humid = threading.Thread(target=extract_TemperatureOrHumiditity_entries, args=(old_outdoor_humidity, outdoor_sensorid))
-    thread_station1_temp = threading.Thread(target=extract_TemperatureOrHumiditity_entries, args=(old_station1_temperature, station1_sensorid))
-    thread_station1_humid = threading.Thread(target=extract_TemperatureOrHumiditity_entries, args=(old_station1_humidity, station1_sensorid))
-    thread_station2_temp = threading.Thread(target=extract_TemperatureOrHumiditity_entries, args=(old_station2_temperature, station2_sensorid))
-    thread_station2_humid = threading.Thread(target=extract_TemperatureOrHumiditity_entries, args=(old_station2_humidity, station2_sensorid))
-    thread_station3_temp = threading.Thread(target=extract_TemperatureOrHumiditity_entries, args=(old_station3_temperature, station3_sensorid))
-    thread_station3_humid = threading.Thread(target=extract_TemperatureOrHumiditity_entries, args=(old_station3_humidity, station3_sensorid))
+    # Construction des threads pour les capteurs
+    for sensor, files in sensors.items():
+        for file in files:
+            old_file = os.path.join(olddbs_directory, file)
+            thread = threading.Thread(target=extract_TemperatureOrHumiditity_entries, args=(old_file, sensor))
+            threads.append(thread)
 
     # Lancement de tous les threads
-    thread_actuators.start()
-    thread_outdoor_temp.start()
-    thread_outdoor_humid.start()
-    thread_station1_temp.start()
-    thread_station1_humid.start()
-    thread_station2_temp.start()
-    thread_station2_humid.start()
-    thread_station3_temp.start()
-    thread_station3_humid.start()
+    for thread in threads:
+        thread.start()
 
     # Attente que les threads aient terminé
-    thread_actuators.join()
-    thread_outdoor_temp.join()
-    thread_outdoor_humid.join()
-    thread_station1_temp.join()
-    thread_station1_humid.join()
-    thread_station2_temp.join()
-    thread_station2_humid.join()
-    thread_station3_temp.join()
-    thread_station3_humid.join()
+    for thread in threads:
+        thread.join()
 
     return
 
