@@ -52,50 +52,68 @@ db_path = os.path.join(db_directory, 'maisonpaul.db')
 # Connexion à la base de données
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
-cursor.execute("CREATE TABLE IF NOT EXISTS HumidityTable (id INTEGER PRIMARY KEY AUTOINCREMENT, sensorid VARCHAR(10), humidity REAL, date DATETIME)")
-cursor.execute("CREATE TABLE IF NOT EXISTS TemperatureTable (id INTEGER PRIMARY KEY AUTOINCREMENT, sensorid VARCHAR(10), temperature REAL, date DATETIME)")
+cursor.execute("CREATE TABLE IF NOT EXISTS HumidityTable (id INTEGER PRIMARY KEY AUTOINCREMENT, sensorid VARCHAR(50), humidity REAL, date DATETIME)")
+cursor.execute("CREATE TABLE IF NOT EXISTS TemperatureTable (id INTEGER PRIMARY KEY AUTOINCREMENT, sensorid VARCHAR(50), temperature REAL, date DATETIME)")
 cursor.execute("CREATE TABLE IF NOT EXISTS ActuatorsTable (id INTEGER PRIMARY KEY AUTOINCREMENT, actuatorid VARCHAR(50), value REAL, action VARCHAR(50), date DATETIME)")
 conn.close()
 print("SQL database initialized!")
 
 def AddEntryToActuatorsTable(actuatorid, value, action):
-    print("New entry to actuators table : {}, {}, {}".format(actuatorid, value, action))
+    print(f"New entry to actuators table : {actuatorid}, {value}, {action}")
     print("Connecting to database...")
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    sql_request = "INSERT INTO ActuatorsTable (actuatorid, value, action, date) VALUES ('{}', {}, '{}', datetime('now'))".format(actuatorid, int(value), action)
-    print("SQL Request : ", sql_request)
-    cursor.execute(sql_request)
-    print("Executing SQL request...")
-    conn.commit()
-    conn.close()
-    print("Done!")
+    conn = None
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        sql_request = "INSERT INTO ActuatorsTable (actuatorid, value, action, date) VALUES (?, ?, ?, datetime('now'))"
+        cursor.execute(sql_request, (actuatorid, value, action))
+        print(f"SQL Request : {sql_request}")
+        print("Executing SQL request...")
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+    finally:
+        if conn is not None:
+            conn.close()
+        print("Done!")
 
 def AddEntryToTemperatureTable(sensorid, temperature):
-    print("New entry to temperature table : {}, {}".format(sensorid, temperature))
+    print(f"New entry to temperature table : {sensorid}, {temperature}")
     print("Connecting to database...")
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    sql_request = "INSERT INTO TemperatureTable (sensorid, temperature, date) VALUES ('{}', {}, datetime('now'))".format(sensorid, float(temperature))
-    print("SQL Request : ", sql_request)
-    cursor.execute(sql_request)
-    print("Executing SQL request...")
-    conn.commit()
-    conn.close()
-    print("Done!")
+    conn = None
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        sql_request = "INSERT INTO TemperatureTable (sensorid, temperature, date) VALUES (?, ?, datetime('now'))"
+        cursor.execute(sql_request, (sensorid, temperature))
+        print(f"SQL Request : {sql_request}")
+        print("Executing SQL request...")
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+    finally:
+        if conn is not None:
+            conn.close()
+        print("Done!")
 
 def AddEntryToHumidityTable(sensorid, humidity):
-    print("New entry to temperature table : {}, {}".format(sensorid, humidity))
+    print(f"New entry to humidity table : {sensorid}, {humidity}")
     print("Connecting to database...")
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    sql_request = "INSERT INTO HumidityTable (sensorid, humidity, date) VALUES ('{}', {}, datetime('now'))".format(sensorid, float(humidity))
-    print("SQL Request : ", sql_request)
-    cursor.execute(sql_request)
-    print("Executing SQL request...")
-    conn.commit()
-    conn.close()
-    print("Done!")
+    conn = None
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        sql_request = "INSERT INTO HumidityTable (sensorid, humidity, date) VALUES (?, ?, datetime('now'))"
+        cursor.execute(sql_request, (sensorid, humidity))
+        print(f"SQL Request : {sql_request}")
+        print("Executing SQL request...")
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+    finally:
+        if conn is not None:
+            conn.close()
+        print("Done!")
 
 # Variable to store generated UUID
 #request_id = None
@@ -117,13 +135,13 @@ def on_message(client, userdata, msg):
     elif str(msg.topic) == "watercloset/heater-mode":
         AddEntryToActuatorsTable(str(msg.topic), 0, str(msg.payload, 'utf-8'))
     elif str(msg.topic) == "station1/temperature":
-        AddEntryToTemperatureTable(str(msg.topic), msg.payload)
+        AddEntryToTemperatureTable("station1", msg.payload)
     elif str(msg.topic) == "station1/humidity":
-        AddEntryToHumidityTable(str(msg.topic), msg.payload)
+        AddEntryToHumidityTable("station1", msg.payload)
     elif str(msg.topic) == "station2/temperature":
-        AddEntryToTemperatureTable(str(msg.topic), msg.payload)
+        AddEntryToTemperatureTable("station2", msg.payload)
     elif str(msg.topic) == "station2/humidity":
-        AddEntryToHumidityTable(str(msg.topic), msg.payload)
+        AddEntryToHumidityTable("station2", msg.payload)
     elif str(msg.topic) == "local-current-weather":
         weather_json = json.loads(str(msg.payload, 'utf-8'))
         AddEntryToTemperatureTable("outdoor", weather_json["main"]["temp"])
