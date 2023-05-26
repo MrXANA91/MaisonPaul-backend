@@ -1,3 +1,4 @@
 *.sh
 *.db
 .vscode/
+__pycache__/
