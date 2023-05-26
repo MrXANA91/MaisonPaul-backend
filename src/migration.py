@@ -2,20 +2,22 @@ import sqlite3
 import os
 import threading
 
+from maisonpaul import execute_sql
+
 # Chemin vers le répertoire contenant le fichier maisonpaul.db
 db_directory = os.path.join(os.path.dirname(__file__), '..', 'db')
 
 # Chemin complet vers le fichier maisonpaul.db
 db_path = os.path.join(db_directory, 'maisonpaul.db')
 
-# Connexion à la base de données
+# Création des tables de prod si jamais elles sont absentes
 new_conn = sqlite3.connect(db_path)
 new_cur = new_conn.cursor()
-
-# Table de prod
 new_cur.execute("CREATE TABLE IF NOT EXISTS HumidityTable (id INTEGER PRIMARY KEY AUTOINCREMENT, sensorid VARCHAR(50), humidity REAL, date DATETIME)")
 new_cur.execute("CREATE TABLE IF NOT EXISTS TemperatureTable (id INTEGER PRIMARY KEY AUTOINCREMENT, sensorid VARCHAR(50), temperature REAL, date DATETIME)")
 new_cur.execute("CREATE TABLE IF NOT EXISTS ActuatorsTable (id INTEGER PRIMARY KEY AUTOINCREMENT, actuatorid VARCHAR(50), value REAL, action VARCHAR(50), date DATETIME)")
+new_conn.commit()
+new_conn.close()
 
 # Lecture des fichiers
 def extract_TemperatureOrHumiditity_entries(file_path, nameid):
@@ -66,61 +68,21 @@ def extract_Actuators_entries(file_path):
 # Fonctions d'écriture dans la base de données
 def AddDatedEntryToTemperatureTable(timestamp, sensorid, temperature):
     print(f"New entry to temperature table : {sensorid}, {temperature}")
-    print("Connecting to database...")
-    conn = None
-    try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        sql_request = "INSERT INTO TemperatureTable (sensorid, temperature, date) VALUES (?, ?, datetime(?, 'unixepoch'))"
-        cursor.execute(sql_request, (sensorid, temperature, timestamp))
-        print(f"SQL Request : {sql_request}")
-        print("Executing SQL request...")
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"An error occurred: {e}")
-    finally:
-        if conn is not None:
-            conn.close()
-        print("Done!")
-
+    sql = "INSERT INTO TemperatureTable (sensorid, temperature, date) VALUES (?, ?, datetime(?, 'unixepoch'))"
+    params = (sensorid, temperature, timestamp)
+    execute_sql(sql, params)
 
 def AddDatedEntryToHumidityTable(timestamp, sensorid, humidity):
     print(f"New entry to humidity table : {sensorid}, {humidity}")
-    print("Connecting to database...")
-    conn = None
-    try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        sql_request = "INSERT INTO HumidityTable (sensorid, humidity, date) VALUES (?, ?, datetime(?, 'unixepoch'))"
-        cursor.execute(sql_request, (sensorid, humidity, timestamp))
-        print(f"SQL Request : {sql_request}")
-        print("Executing SQL request...")
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"An error occurred: {e}")
-    finally:
-        if conn is not None:
-            conn.close()
-        print("Done!")
+    sql = "INSERT INTO HumidityTable (sensorid, humidity, date) VALUES (?, ?, datetime(?, 'unixepoch'))"
+    params = (sensorid, humidity, timestamp)
+    execute_sql(sql, params)
 
 def AddDatedEntryToActuatorsTable(timestamp, actuatorid, value, action):
     print(f"New entry to actuators table : {actuatorid}, {value}, {action}")
-    print("Connecting to database...")
-    conn = None
-    try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        sql_request = "INSERT INTO ActuatorsTable (actuatorid, value, action, date) VALUES (?, ?, ?, datetime(?, 'unixepoch'))"
-        cursor.execute(sql_request, (actuatorid, value, action, timestamp))
-        print(f"SQL Request : {sql_request}")
-        print("Executing SQL request...")
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"An error occurred: {e}")
-    finally:
-        if conn is not None:
-            conn.close()
-        print("Done!")
+    sql = "INSERT INTO ActuatorsTable (actuatorid, value, action, date) VALUES (?, ?, ?, datetime(?, 'unixepoch'))"
+    params = (actuatorid, value, action, timestamp)
+    execute_sql(sql, params)
 
 # ENTRY POINT
 def main():
