@@ -1,7 +1,7 @@
 import sqlite3
 import os
 
-from maisonpaul import execute_sql
+from maisonpaul import execute_sql, getFormattedTime
 
 # Chemin vers le répertoire contenant le fichier maisonpaul.db
 db_directory = os.path.join(os.path.dirname(__file__), '..', 'db')
@@ -56,9 +56,9 @@ def extract_Actuators_entries(file_path):
             elif str(actuatorid) == "watercloset/heater":
                 AddDatedEntryToActuatorsTable(timestamp, actuatorid, value, "")
             elif str(actuatorid) == "bedroom/heater-mode":
-                AddDatedEntryToActuatorsTable(timestamp, actuatorid, 0, str(value, 'utf-8'))
+                AddDatedEntryToActuatorsTable(timestamp, actuatorid, 0, str(value))
             elif str(actuatorid) == "watercloset/heater-mode":
-                AddDatedEntryToActuatorsTable(timestamp, actuatorid, 0, str(value, 'utf-8'))
+                AddDatedEntryToActuatorsTable(timestamp, actuatorid, 0, str(value))
             else:
                 print("Unknown actuatorid : {}={}".format(str(actuatorid), str(value)))
         print("File {} finished!".format(str(file_path)))
@@ -66,20 +66,20 @@ def extract_Actuators_entries(file_path):
 
 # Fonctions d'écriture dans la base de données
 def AddDatedEntryToTemperatureTable(timestamp, sensorid, temperature):
-    print(f"New entry to temperature table : {sensorid}, {temperature}")
-    sql = "INSERT INTO TemperatureTable (sensorid, temperature, date) VALUES (?, ?, datetime(?, 'unixepoch'))"
+    print(f"New entry from {getFormattedTime(timestamp)} to temperature table : {sensorid}, {temperature}")
+    sql = "INSERT INTO TemperatureTable (sensorid, temperature, date) VALUES (?, ?, datetime(?, 'unixepoch', 'UTC'))"
     params = (sensorid, temperature, timestamp)
     execute_sql(sql, params)
 
 def AddDatedEntryToHumidityTable(timestamp, sensorid, humidity):
-    print(f"New entry to humidity table : {sensorid}, {humidity}")
-    sql = "INSERT INTO HumidityTable (sensorid, humidity, date) VALUES (?, ?, datetime(?, 'unixepoch'))"
+    print(f"New entry from {getFormattedTime(timestamp)} to humidity table : {sensorid}, {humidity}")
+    sql = "INSERT INTO HumidityTable (sensorid, humidity, date) VALUES (?, ?, datetime(?, 'unixepoch', 'UTC'))"
     params = (sensorid, humidity, timestamp)
     execute_sql(sql, params)
 
 def AddDatedEntryToActuatorsTable(timestamp, actuatorid, value, action):
-    print(f"New entry to actuators table : {actuatorid}, {value}, {action}")
-    sql = "INSERT INTO ActuatorsTable (actuatorid, value, action, date) VALUES (?, ?, ?, datetime(?, 'unixepoch'))"
+    print(f"New entry from {getFormattedTime(timestamp)} to actuators table : {actuatorid}, {value}, {action}")
+    sql = "INSERT INTO ActuatorsTable (actuatorid, value, action, date) VALUES (?, ?, ?, datetime(?, 'unixepoch', 'UTC'))"
     params = (actuatorid, value, action, timestamp)
     execute_sql(sql, params)
 
