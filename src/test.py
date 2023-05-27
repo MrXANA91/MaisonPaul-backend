@@ -1,5 +1,18 @@
+import argparse
 import os
 import sqlite3
+import time
+import paho.mqtt.client as mqtt
+
+from migration import extract_TemperatureOrHumiditity_entries, extract_Actuators_entries, AddDatedEntryToTemperatureTable, AddDatedEntryToActuatorsTable, AddDatedEntryToHumidityTable
+
+# Argument parsing management
+parser = argparse.ArgumentParser(description='Python script authentication')
+parser.add_argument('--mqttaddress', dest='mqttaddress', type=str, help='IP address of the MQTT broker')
+parser.add_argument('--mqttusername', dest='mqttusername', type=str, help='Username to use for MQTT broker authentication')
+parser.add_argument('--mqttpwd', dest='mqttpwd', type=str, help='Password to use for MQTT broker authentication')
+
+args = parser.parse_args()
 
 # Chemin vers le répertoire contenant le fichier maisonpaul.db
 db_directory = os.path.join(os.path.dirname(__file__), '..', 'db')
@@ -10,18 +23,38 @@ db_path = os.path.join(db_directory, 'maisonpaul.db')
 # Connexion à la base de données
 new_conn = sqlite3.connect(db_path)
 new_cur = new_conn.cursor()
-res = new_cur.execute("SELECT * FROM ActuatorsTable")
-print(res.fetchall())
-res = new_cur.execute("SELECT * FROM TemperatureTable")
-print(res.fetchall())
-res = new_cur.execute("SELECT * FROM HumidityTable")
-print(res.fetchall())
-res = new_cur.execute("SELECT temperature, date FROM TemperatureTable WHERE sensorid = 'station1/temperature'")
-print(res.fetchall())
-res = new_cur.execute("SELECT actuatorid, value, action, date FROM ActuatorsTable WHERE actuatorid = 'mainroom/heater1' OR actuatorid = 'mainroom/heater2'")
-print(res.fetchall())
+
+new_cur.execute("CREATE TABLE IF NOT EXISTS HumidityTable (id INTEGER PRIMARY KEY AUTOINCREMENT, sensorid VARCHAR(50), humidity REAL, date DATETIME)")
+new_cur.execute("CREATE TABLE IF NOT EXISTS TemperatureTable (id INTEGER PRIMARY KEY AUTOINCREMENT, sensorid VARCHAR(50), temperature REAL, date DATETIME)")
+new_cur.execute("CREATE TABLE IF NOT EXISTS ActuatorsTable (id INTEGER PRIMARY KEY AUTOINCREMENT, actuatorid VARCHAR(50), value REAL, action VARCHAR(50), date DATETIME)")
+print("SQL database initialized!")
+
+# Client MQTT creation
+client = mqtt.Client("MaisonPaul-backend-python")
+
+# Connection to the MQTT broker
+print("Connecting to the MQTT broker...")
+client.username_pw_set(args.mqttusername, args.mqttpwd)
+
+while True:
+    try:
+        client.connect(args.mqttaddress, port=1883)
+        print("Connected!")
+        break  # Si la connexion réussit, on sort de la boucle
+    except Exception as e:
+        print("Failed to connect to MQTT broker, trying again in 5 seconds...")
+        time.sleep(5)  # Attend 5 secondes avant de réessayer
+
+stop_thread = False
+while not stop_thread:
+    print("Press escape combo Ctrl+C to exit.")
+    try:
+        var = input()
+    except KeyboardInterrupt:
+        print("MAIN-LOOP : KeyboardInterrupt !")
+        stop_thread = True
 
 # new_cur.execute("DROP TABLE ActuatorsTable")
 # new_cur.execute("DROP TABLE TemperatureTable")
 # new_cur.execute("DROP TABLE HumidityTable")
-print("Done!")
+# print("Done!")
