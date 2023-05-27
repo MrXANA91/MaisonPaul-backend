@@ -7,6 +7,8 @@ import time
 import threading
 import os
 import uuid
+import time
+from datetime import datetime
 
 # Argument parsing management
 parser = argparse.ArgumentParser(description='Python script authentication')
@@ -42,6 +44,7 @@ def execute_sql(sql, params):
         cursor = conn.cursor()
         cursor.execute(sql, params)
         print(f"SQL Request : {sql}")
+        print(f"SQL Parameters : {params}")
         print("Executing SQL request...")
         conn.commit()
     except sqlite3.Error as e:
@@ -51,21 +54,28 @@ def execute_sql(sql, params):
             conn.close()
         print("Done!")
 
+def getFormattedTime(timestamp):
+    # Conversion du timestamp en datetime
+    dt_object = datetime.utcfromtimestamp(int(float(timestamp)))
+    # Formatage de l'objet datetime pour l'afficher comme une chaîne de caractères
+    formatted_time = dt_object.strftime('%Y-%m-%d %H:%M:%S')
+    return formatted_time
+
 def AddEntryToActuatorsTable(actuatorid, value, action):
-    print(f"New entry to actuators table : {actuatorid}, {value}, {action}")
-    sql = "INSERT INTO ActuatorsTable (actuatorid, value, action, date) VALUES (?, ?, ?, datetime('now'))"
+    print(f"New entry from {getFormattedTime(time.time())} to actuators table : {actuatorid}, {value}, {action}")
+    sql = "INSERT INTO ActuatorsTable (actuatorid, value, action, date) VALUES (?, ?, ?, datetime('now', 'UTC'))"
     params = (actuatorid, value, action)
     execute_sql(sql, params)
 
 def AddEntryToTemperatureTable(sensorid, temperature):
-    print(f"New entry to temperature table : {sensorid}, {temperature}")
-    sql = "INSERT INTO TemperatureTable (sensorid, temperature, date) VALUES (?, ?, datetime('now'))"
+    print(f"New entry from {getFormattedTime(time.time())} to temperature table : {sensorid}, {temperature}")
+    sql = "INSERT INTO TemperatureTable (sensorid, temperature, date) VALUES (?, ?, datetime('now', 'UTC'))"
     params = (sensorid, temperature)
     execute_sql(sql, params)
 
 def AddEntryToHumidityTable(sensorid, humidity):
-    print(f"New entry to humidity table : {sensorid}, {humidity}")
-    sql = "INSERT INTO HumidityTable (sensorid, humidity, date) VALUES (?, ?, datetime('now'))"
+    print(f"New entry from {getFormattedTime(time.time())} to humidity table : {sensorid}, {humidity}")
+    sql = "INSERT INTO HumidityTable (sensorid, humidity, date) VALUES (?, ?, datetime('now', 'UTC'))"
     params = (sensorid, humidity)
     execute_sql(sql, params)
 
