@@ -147,8 +147,15 @@ if __name__ == "__main__":
     # Connection to the MQTT broker
     print("Connecting to the MQTT broker...")
     client.username_pw_set(args.mqttusername, args.mqttpwd)
-    client.connect(args.mqttaddress, port=1883)
-    print("Connected!")
+    
+    while True:
+        try:
+            client.connect(args.mqttaddress, port=1883)
+            print("Connected!")
+            break  # Si la connexion réussit, on sort de la boucle
+        except Exception as e:
+            print("Failed to connect to MQTT broker, trying again in 5 seconds...")
+            time.sleep(5)  # Attend 5 secondes avant de réessayer
 
     # Topic subscription
     print("Subscribing to MQTT topics...")
