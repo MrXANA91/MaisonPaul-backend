@@ -14,7 +14,7 @@ import logging
 # VERSION
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
-VERSION_PATCH = 0
+VERSION_PATCH = 1
 
 # Argument parsing management
 parser = argparse.ArgumentParser(description='Python script authentication')
@@ -41,22 +41,27 @@ db_path = os.path.join(db_directory, 'maisonpaul.db')
 def execute_sql(sql, params):
     print("Connecting to database...")
     conn = None
-    try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        cursor.execute(sql, params)
-        print(f"SQL Request : {sql}")
-        print(f"SQL Parameters : {params}")
-        print("Executing SQL request...")
-        logger.debug('Executing SQL request : %s with parameters %s', sql, params)
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"An error occurred: {e}")
-        logger.error('An error occured executing SQL request: %s', e)
-    finally:
-        if conn is not None:
-            conn.close()
-        print("Done!")
+    sqlRequestSuceeded = False
+    numberOfTries = 0
+    while sqlRequestSuceeded==False and numberOfTries<5:
+        try:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute(sql, params)
+            print(f"SQL Request : {sql}")
+            print(f"SQL Parameters : {params}")
+            print("Executing SQL request...")
+            logger.debug('Executing SQL request : %s with parameters %s', sql, params)
+            conn.commit()
+            sqlRequestSuceeded = True
+        except sqlite3.Error as e:
+            print(f"An error occurred: {e}")
+            logger.error('An error occured executing SQL request: %s', e)
+            numberOfTries += 1
+        finally:
+            if conn is not None:
+                conn.close()
+    print("Done!")
 
 def getFormattedTime(timestamp):
     # Conversion du timestamp en datetime
