@@ -14,7 +14,7 @@ import logging
 # VERSION
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
-VERSION_PATCH = 2
+VERSION_PATCH = 3
 
 # Argument parsing management
 parser = argparse.ArgumentParser(description='Python script authentication')
@@ -41,9 +41,9 @@ db_path = os.path.join(db_directory, 'maisonpaul.db')
 def execute_sql(sql, params):
     print("Connecting to database...")
     conn = None
-    sqlRequestSuceeded = False
+    sqlRequestSucceeded = False
     numberOfTries = 0
-    while sqlRequestSuceeded==False and numberOfTries<5:
+    while sqlRequestSucceeded==False and numberOfTries<5:
         try:
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
@@ -53,7 +53,7 @@ def execute_sql(sql, params):
             print("Executing SQL request...")
             logger.debug('Executing SQL request : %s with parameters %s', sql, params)
             conn.commit()
-            sqlRequestSuceeded = True
+            sqlRequestSucceeded = True
         except sqlite3.Error as e:
             print(f"An error occurred: {e}")
             logger.error('An error occured executing SQL request: %s', e)
@@ -61,7 +61,11 @@ def execute_sql(sql, params):
         finally:
             if conn is not None:
                 conn.close()
-    print("Done!")
+    if sqlRequestSucceeded==True:
+        print("Done!")
+    else:
+        print("5 consecutive failed attemps, aborting")
+        logger.critical("5 consecutive failed sql attemps, aborting")
 
 def getFormattedTime(timestamp):
     # Conversion du timestamp en datetime
