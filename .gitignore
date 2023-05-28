@@ -1,4 +1,6 @@
 *.sh
 *.db
+*.log
 .vscode/
 __pycache__/
+production/
