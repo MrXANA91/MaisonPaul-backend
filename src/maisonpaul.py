@@ -9,6 +9,12 @@ import os
 import uuid
 import time
 from datetime import datetime
+import logging
+
+# VERSION
+VERSION_MAJOR = 0
+VERSION_MINOR = 1
+VERSION_PATCH = 0
 
 # Argument parsing management
 parser = argparse.ArgumentParser(description='Python script authentication')
@@ -21,20 +27,16 @@ parser.add_argument('--weatherapplon', dest='weatherapplon', type=str, help='Lon
 
 args = parser.parse_args()
 
-# Connection to the SQLite3 database and creation of the tables if they don't exist
-print("Initializing SQL database...")
+# Logging management
+logging.basicConfig(filename='maisonpaul.log',level=logging.INFO,
+                    format='%(asctime)s %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+logger = logging.getLogger("MaisonPaul-logger")
+logger.setLevel(logging.INFO)
+
 # Chemin vers le répertoire contenant le fichier maisonpaul.db
 db_directory = os.path.join(os.path.dirname(__file__), '..', 'db')
 # Chemin complet vers le fichier maisonpaul.db
 db_path = os.path.join(db_directory, 'maisonpaul.db')
-# Connexion à la base de données
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
-cursor.execute("CREATE TABLE IF NOT EXISTS HumidityTable (id INTEGER PRIMARY KEY AUTOINCREMENT, sensorid VARCHAR(50), humidity REAL, date DATETIME)")
-cursor.execute("CREATE TABLE IF NOT EXISTS TemperatureTable (id INTEGER PRIMARY KEY AUTOINCREMENT, sensorid VARCHAR(50), temperature REAL, date DATETIME)")
-cursor.execute("CREATE TABLE IF NOT EXISTS ActuatorsTable (id INTEGER PRIMARY KEY AUTOINCREMENT, actuatorid VARCHAR(50), value REAL, action VARCHAR(50), date DATETIME)")
-conn.close()
-print("SQL database initialized!")
 
 def execute_sql(sql, params):
     print("Connecting to database...")
@@ -46,9 +48,11 @@ def execute_sql(sql, params):
         print(f"SQL Request : {sql}")
         print(f"SQL Parameters : {params}")
         print("Executing SQL request...")
+        logger.debug('Executing SQL request : %s with parameters %s', sql, params)
         conn.commit()
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
+        logger.error('An error occured executing SQL request: %s', e)
     finally:
         if conn is not None:
             conn.close()
@@ -85,6 +89,7 @@ def AddEntryToHumidityTable(sensorid, humidity):
 # Callback fonction for received messages
 def on_message(client, userdata, msg):
     print(str(msg.topic), " MQTT topic just got : ", str(msg.payload))
+    logger.debug('Message received on topic %s : %s', str(msg.topic), str(msg.payload))
 
     if str(msg.topic) == "mainroom/heater1":
         AddEntryToActuatorsTable(str(msg.topic), msg.payload, "")
@@ -116,6 +121,7 @@ def on_message(client, userdata, msg):
 stop_thread = False
 def background_request():
     global stop_thread
+    global logger
     while not stop_thread:
         # Définition l'URL de la requête
         url = "https://api.openweathermap.org/data/2.5/weather?lat="+args.weatherapplat+"&lon="+args.weatherapplon+"&appid="+args.weatherappid+"&units=metric&lang=fr"
@@ -131,8 +137,10 @@ def background_request():
             print("(Thread) Publishing to local-current-weather MQTT topic...")
             client.publish("local-current-weather", response_txt, 2, True)
             print("(Thread) Done! (Going to sleep for 2 minutes)")
+            logger.info('Published into local-current-weather')
         else:
             print("(Thread) Failed HTTP request. Error code :", response.status_code)
+            logger.error('An error occured with HTTP request. Error code : %d', response.status_code)
 
         # 2 minutes d'attente avant de répéter la boucle
         for x in range(120):
@@ -141,6 +149,31 @@ def background_request():
                 break
 
 if __name__ == "__main__":
+    # Intro
+    logger.info(f'MaisonPaul-backend - starting up version {VERSION_MAJOR}.{VERSION_MINOR}.{VERSION_PATCH}')
+    print('================================')
+    print('====== MaisonPaul-backend ======')
+    print('================================')
+    print(f'Version {VERSION_MAJOR}.{VERSION_MINOR}.{VERSION_PATCH}')
+
+    # Connection to the SQLite3 database and creation of the tables if they don't exist
+    print("Initializing SQL database...")
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS HumidityTable (id INTEGER PRIMARY KEY AUTOINCREMENT, sensorid VARCHAR(50), humidity REAL, date DATETIME)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS TemperatureTable (id INTEGER PRIMARY KEY AUTOINCREMENT, sensorid VARCHAR(50), temperature REAL, date DATETIME)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS ActuatorsTable (id INTEGER PRIMARY KEY AUTOINCREMENT, actuatorid VARCHAR(50), value REAL, action VARCHAR(50), date DATETIME)")
+        conn.close()
+        print("SQL database initialized!")
+        logger.info('SQL database initialized!')
+    except sqlite3.Error as e:
+        print(f"An error occured: {e}")
+        logger.error('An error occured executing SQL request: %s', e)
+    finally:
+        if conn is not None:
+            conn.close()
+    
     # Client MQTT creation
     client = mqtt.Client("MaisonPaul-backend-python")
 
@@ -152,9 +185,11 @@ if __name__ == "__main__":
         try:
             client.connect(args.mqttaddress, port=1883)
             print("Connected!")
+            logger.info('Connected to the MQTT broker')
             break  # Si la connexion réussit, on sort de la boucle
         except Exception as e:
             print("Failed to connect to MQTT broker, trying again in 5 seconds...")
+            logger.error('Failed to connect to MQTT broker (trying again in 5 seconds) : %s', e)
             time.sleep(5)  # Attend 5 secondes avant de réessayer
 
     # Topic subscription
@@ -186,7 +221,26 @@ if __name__ == "__main__":
 
     while not stop_thread:
         try:
-            var = input()
+            var = input().lower()
+            if var.startswith('get level') == True:
+                print(f"Logging level = {logging.getLevelName}")
+            elif var.startswith('set level debug') == True:
+                print(f"Logging level set to DEBUG")
+                logger.setLevel(logging.DEBUG)
+            elif var.startswith('set level info') == True:
+                print(f"Logging level set to INFO")
+                logger.setLevel(logging.INFO)
+            elif var.startswith('set level warning') == True:
+                print(f"Logging level set to WARNING")
+                logger.setLevel(logging.WARNING)
+            elif var.startswith('set level error') == True:
+                print(f"Logging level set to ERROR")
+                logger.setLevel(logging.ERROR)
+            elif var.startswith('set level critical') == True:
+                print(f"Logging level set to CRITICAL")
+                logger.setLevel(logging.CRITICAL)
+            else:
+                print("Unknown command")
         except KeyboardInterrupt:
             print("MAIN-LOOP : KeyboardInterrupt !")
             stop_thread = True
@@ -195,3 +249,5 @@ if __name__ == "__main__":
 
     client.loop_stop()
     client.disconnect()
+
+    logger.info('Program terminated')
