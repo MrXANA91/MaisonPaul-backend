@@ -3,6 +3,7 @@ import os
 import sqlite3
 import time
 import paho.mqtt.client as mqtt
+import logging
 
 from migration import extract_TemperatureOrHumiditity_entries, extract_Actuators_entries, AddDatedEntryToTemperatureTable, AddDatedEntryToActuatorsTable, AddDatedEntryToHumidityTable
 
@@ -11,8 +12,17 @@ parser = argparse.ArgumentParser(description='Python script authentication')
 parser.add_argument('--mqttaddress', dest='mqttaddress', type=str, help='IP address of the MQTT broker')
 parser.add_argument('--mqttusername', dest='mqttusername', type=str, help='Username to use for MQTT broker authentication')
 parser.add_argument('--mqttpwd', dest='mqttpwd', type=str, help='Password to use for MQTT broker authentication')
+parser.add_argument('--weatherappid', dest='weatherappid', type=str, help='App ID for OpenWeatherAPI authentication')
+parser.add_argument('--weatherapplat', dest='weatherapplat', type=str, help='Latitude for the OpenWeatherAPI request')
+parser.add_argument('--weatherapplon', dest='weatherapplon', type=str, help='Longitude for the OpenWeatherAPI request')
 
 args = parser.parse_args()
+
+# Logging management
+logging.basicConfig(filename='test.log',level=logging.ERROR,
+                    format='%(asctime)s %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+logger = logging.getLogger("Test-logger")
+logger.setLevel(logging.ERROR)
 
 # Chemin vers le répertoire contenant le fichier maisonpaul.db
 db_directory = os.path.join(os.path.dirname(__file__), '..', 'db')
@@ -49,7 +59,11 @@ stop_thread = False
 while not stop_thread:
     print("Press escape combo Ctrl+C to exit.")
     try:
-        var = input()
+        var = input().lower()
+        if var.startswith('get level') == True:
+            print(f"Logging level = {logging.getLevelName(logger.level)}")
+        else:
+            print("Unknown command")
     except KeyboardInterrupt:
         print("MAIN-LOOP : KeyboardInterrupt !")
         stop_thread = True
