@@ -14,7 +14,7 @@ import logging
 # VERSION
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
-VERSION_PATCH = 1
+VERSION_PATCH = 2
 
 # Argument parsing management
 parser = argparse.ArgumentParser(description='Python script authentication')
@@ -72,19 +72,19 @@ def getFormattedTime(timestamp):
 
 def AddEntryToActuatorsTable(actuatorid, value, action):
     print(f"New entry from {getFormattedTime(time.time())} to actuators table : {actuatorid}, {value}, {action}")
-    sql = "INSERT INTO ActuatorsTable (actuatorid, value, action, date) VALUES (?, ?, ?, datetime('now', 'UTC'))"
+    sql = "INSERT INTO ActuatorsTable (actuatorid, value, action, date) VALUES (?, ?, ?, datetime('now'))"
     params = (actuatorid, value, action)
     execute_sql(sql, params)
 
 def AddEntryToTemperatureTable(sensorid, temperature):
     print(f"New entry from {getFormattedTime(time.time())} to temperature table : {sensorid}, {temperature}")
-    sql = "INSERT INTO TemperatureTable (sensorid, temperature, date) VALUES (?, ?, datetime('now', 'UTC'))"
+    sql = "INSERT INTO TemperatureTable (sensorid, temperature, date) VALUES (?, ?, datetime('now'))"
     params = (sensorid, temperature)
     execute_sql(sql, params)
 
 def AddEntryToHumidityTable(sensorid, humidity):
     print(f"New entry from {getFormattedTime(time.time())} to humidity table : {sensorid}, {humidity}")
-    sql = "INSERT INTO HumidityTable (sensorid, humidity, date) VALUES (?, ?, datetime('now', 'UTC'))"
+    sql = "INSERT INTO HumidityTable (sensorid, humidity, date) VALUES (?, ?, datetime('now'))"
     params = (sensorid, humidity)
     execute_sql(sql, params)
 
