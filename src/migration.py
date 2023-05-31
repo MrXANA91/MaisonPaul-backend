@@ -1,7 +1,14 @@
+from datetime import datetime
+import logging
 import sqlite3
 import os
+import time
 
-from maisonpaul import execute_sql, getFormattedTime
+# Logging management
+logging.basicConfig(filename='migration.log',level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+logger = logging.getLogger("Test-logger")
+logger.setLevel(logging.DEBUG)
 
 # Chemin vers le répertoire contenant le fichier maisonpaul.db
 db_directory = os.path.join(os.path.dirname(__file__), '..', 'db')
@@ -15,8 +22,42 @@ new_cur = new_conn.cursor()
 new_cur.execute("CREATE TABLE IF NOT EXISTS HumidityTable (id INTEGER PRIMARY KEY AUTOINCREMENT, sensorid VARCHAR(50), humidity REAL, date DATETIME)")
 new_cur.execute("CREATE TABLE IF NOT EXISTS TemperatureTable (id INTEGER PRIMARY KEY AUTOINCREMENT, sensorid VARCHAR(50), temperature REAL, date DATETIME)")
 new_cur.execute("CREATE TABLE IF NOT EXISTS ActuatorsTable (id INTEGER PRIMARY KEY AUTOINCREMENT, actuatorid VARCHAR(50), value REAL, action VARCHAR(50), date DATETIME)")
-new_conn.commit()
 new_conn.close()
+
+def execute_sql(sql, params):
+    print("Connecting to database...")
+    conn = None
+    sqlRequestSucceeded = False
+    numberOfTries = 0
+    while sqlRequestSucceeded==False and numberOfTries<5:
+        try:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute(sql, params)
+            print(f"SQL Request : {sql}")
+            print(f"SQL Parameters : {params}")
+            print("Executing SQL request...")
+            conn.commit()
+            sqlRequestSucceeded = True
+        except sqlite3.Error as e:
+            print(f"An error occurred: {e}")
+            logger.error('An error occured executing SQL request: %s', e)
+            numberOfTries += 1
+        finally:
+            if conn is not None:
+                conn.close()
+    if sqlRequestSucceeded==True:
+        print("Done!")
+    else:
+        print("5 consecutive failed attemps, aborting")
+        logger.critical("5 consecutive failed sql attemps, aborting")
+
+def getFormattedTime(timestamp):
+    # Conversion du timestamp en datetime
+    dt_object = datetime.utcfromtimestamp(int(float(timestamp)))
+    # Formatage de l'objet datetime pour l'afficher comme une chaîne de caractères
+    formatted_time = dt_object.strftime('%Y-%m-%d %H:%M:%S')
+    return formatted_time
 
 # Lecture des fichiers
 def extract_TemperatureOrHumiditity_entries(file_path, nameid):
@@ -33,6 +74,7 @@ def extract_TemperatureOrHumiditity_entries(file_path, nameid):
                 AddDatedEntryToTemperatureTable(timestamp, nameid, value)
             else:
                 AddDatedEntryToHumidityTable(timestamp, nameid, value)
+            time.sleep(0.1)
         print("File {} finished!".format(str(file_path)))
 
 def extract_Actuators_entries(file_path):
@@ -61,6 +103,7 @@ def extract_Actuators_entries(file_path):
                 AddDatedEntryToActuatorsTable(timestamp, actuatorid, 0, str(value))
             else:
                 print("Unknown actuatorid : {}={}".format(str(actuatorid), str(value)))
+            time.sleep(0.1)
         print("File {} finished!".format(str(file_path)))
 
 
@@ -98,14 +141,22 @@ def main():
         "station3": ["temp-station3.txt", "humidity-station3.txt"]
     }
 
-    # Exécution de la fonction pour les actuators
-    extract_Actuators_entries(old_actuators)
+    # # Exécution de la fonction pour les actuators
+    # extract_Actuators_entries(old_actuators)
 
-    # Exécution des fonctions pour les capteurs
-    for sensor, files in sensors.items():
-        for file in files:
-            old_file = os.path.join(olddbs_directory, file)
-            extract_TemperatureOrHumiditity_entries(old_file, sensor)
+    # # Exécution des fonctions pour les capteurs
+    # for sensor, files in sensors.items():
+    #     for file in files:
+    #         old_file = os.path.join(olddbs_directory, file)
+    #         extract_TemperatureOrHumiditity_entries(old_file, sensor)
+    
+    logger.info('Starting job : temp-station2.txt')
+
+    old_file= os.path.join(olddbs_directory, "temp-station2.txt")
+    extract_TemperatureOrHumiditity_entries(old_file, "station2")
+
+    logger.info('Job finished!')
+    print('Job finished!')
 
     return
 
