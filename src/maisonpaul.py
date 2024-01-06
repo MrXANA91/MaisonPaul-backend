@@ -28,10 +28,10 @@ parser.add_argument('--weatherapplon', dest='weatherapplon', type=str, help='Lon
 args = parser.parse_args()
 
 # Logging management
-logging.basicConfig(filename='maisonpaul.log',level=logging.INFO,
+logging.basicConfig(filename='maisonpaul.log',level=logging.WARNING,
                     format='%(asctime)s %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger("MaisonPaul-logger")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 
 # Chemin vers le répertoire contenant le fichier maisonpaul.db
 db_directory = os.path.join(os.path.dirname(__file__), '..', 'db')

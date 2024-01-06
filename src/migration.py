@@ -150,10 +150,10 @@ def main():
     #         old_file = os.path.join(olddbs_directory, file)
     #         extract_TemperatureOrHumiditity_entries(old_file, sensor)
     
-    logger.info('Starting job : temp-station2.txt')
+    logger.info('Starting job : humidity-station3.txt')
 
-    old_file= os.path.join(olddbs_directory, "temp-station2.txt")
-    extract_TemperatureOrHumiditity_entries(old_file, "station2")
+    old_file= os.path.join(olddbs_directory, "humidity-station3.txt")
+    extract_TemperatureOrHumiditity_entries(old_file, "station3")
 
     logger.info('Job finished!')
     print('Job finished!')
