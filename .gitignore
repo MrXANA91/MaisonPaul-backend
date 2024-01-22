@@ -4,3 +4,4 @@
 .vscode/
 __pycache__/
 production/
+docker-compose.yaml

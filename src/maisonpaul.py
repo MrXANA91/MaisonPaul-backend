@@ -13,19 +13,29 @@ import logging
 
 # VERSION
 VERSION_MAJOR = 0
-VERSION_MINOR = 1
-VERSION_PATCH = 3
+VERSION_MINOR = 2
+VERSION_PATCH = 0
 
-# Argument parsing management
-parser = argparse.ArgumentParser(description='Python script authentication')
-parser.add_argument('--mqttaddress', dest='mqttaddress', type=str, help='IP address of the MQTT broker')
-parser.add_argument('--mqttusername', dest='mqttusername', type=str, help='Username to use for MQTT broker authentication')
-parser.add_argument('--mqttpwd', dest='mqttpwd', type=str, help='Password to use for MQTT broker authentication')
-parser.add_argument('--weatherappid', dest='weatherappid', type=str, help='App ID for OpenWeatherAPI authentication')
-parser.add_argument('--weatherapplat', dest='weatherapplat', type=str, help='Latitude for the OpenWeatherAPI request')
-parser.add_argument('--weatherapplon', dest='weatherapplon', type=str, help='Longitude for the OpenWeatherAPI request')
+# Environment variables retrieval
+mqttaddress = os.environ.get('MAISONPAULBACKEND_MQTT_HOST')
+mqttport = os.environ.get('MAISONPAULBACKEND_MQTT_PORT')
+mqttclientname = os.environ.get('MAISONPAULBACKEND_MQTT_CLIENT')
+mqttusername = os.environ.get('MAISONPAULBACKEND_MQTT_USER')
+mqttpwd = os.environ.get('MAISONPAULBACKEND_MQTT_PASSWORD')
 
-args = parser.parse_args()
+weatherappid = os.environ.get('MAISONPAULBACKEND_OPENWEATHERAPI_APIKEY')
+weatherapplat = os.environ.get('MAISONPAULBACKEND_OPENWEATHERAPI_LAT')
+weatherapplon = os.environ.get('MAISONPAULBACKEND_OPENWEATHERAPI_LON')
+
+def checkEnvVar():
+    if (mqttaddress == None): exit(1)
+    if (mqttport == None): exit(2)
+    if (mqttclientname == None): exit(3)
+    if (mqttusername == None): exit(4)
+    if (mqttpwd == None): exit(5)
+    if (weatherappid == None): exit(6)
+    if (weatherapplat == None): exit(7)
+    if (weatherapplon == None): exit(8)
 
 # Logging management
 logging.basicConfig(filename='maisonpaul.log',level=logging.WARNING,
@@ -133,7 +143,7 @@ def background_request():
     global logger
     while not stop_thread:
         # Définition l'URL de la requête
-        url = "https://api.openweathermap.org/data/2.5/weather?lat="+args.weatherapplat+"&lon="+args.weatherapplon+"&appid="+args.weatherappid+"&units=metric&lang=fr"
+        url = "https://api.openweathermap.org/data/2.5/weather?lat="+weatherapplat+"&lon="+weatherapplon+"&appid="+weatherappid+"&units=metric&lang=fr"
 
         # Execution de la requête HTTP
         response = requests.get(url)
@@ -165,6 +175,8 @@ if __name__ == "__main__":
     print('================================')
     print(f'Version {VERSION_MAJOR}.{VERSION_MINOR}.{VERSION_PATCH}')
 
+    checkEnvVar()
+
     # Connection to the SQLite3 database and creation of the tables if they don't exist
     print("Initializing SQL database...")
     try:
@@ -184,15 +196,15 @@ if __name__ == "__main__":
             conn.close()
     
     # Client MQTT creation
-    client = mqtt.Client("MaisonPaul-backend-python")
+    client = mqtt.Client(mqttclientname)
 
     # Connection to the MQTT broker
     print("Connecting to the MQTT broker...")
-    client.username_pw_set(args.mqttusername, args.mqttpwd)
+    client.username_pw_set(mqttusername, mqttpwd)
     
     while True:
         try:
-            client.connect(args.mqttaddress, port=1883)
+            client.connect(mqttaddress, int(mqttport))
             print("Connected!")
             logger.info('Connected to the MQTT broker')
             break  # Si la connexion réussit, on sort de la boucle
@@ -228,35 +240,36 @@ if __name__ == "__main__":
     # Démarrage du thread
     thread.start()
 
-    while not stop_thread:
-        try:
-            var = input().lower()
-            if var.startswith('get level') == True:
-                print(f"Logging level = {logging.getLevelName}")
-            elif var.startswith('set level debug') == True:
-                print(f"Logging level set to DEBUG")
-                logger.setLevel(logging.DEBUG)
-            elif var.startswith('set level info') == True:
-                print(f"Logging level set to INFO")
-                logger.setLevel(logging.INFO)
-            elif var.startswith('set level warning') == True:
-                print(f"Logging level set to WARNING")
-                logger.setLevel(logging.WARNING)
-            elif var.startswith('set level error') == True:
-                print(f"Logging level set to ERROR")
-                logger.setLevel(logging.ERROR)
-            elif var.startswith('set level critical') == True:
-                print(f"Logging level set to CRITICAL")
-                logger.setLevel(logging.CRITICAL)
-            else:
-                print("Unknown command")
-        except KeyboardInterrupt:
-            print("MAIN-LOOP : KeyboardInterrupt !")
-            stop_thread = True
+    # # TODO : ne fonctionne plus depuis le passage sous Docker
+    # while not stop_thread:
+    #     try:
+    #         var = input().lower()
+    #         if var.startswith('get level') == True:
+    #             print(f"Logging level = {logging.getLevelName}")
+    #         elif var.startswith('set level debug') == True:
+    #             print(f"Logging level set to DEBUG")
+    #             logger.setLevel(logging.DEBUG)
+    #         elif var.startswith('set level info') == True:
+    #             print(f"Logging level set to INFO")
+    #             logger.setLevel(logging.INFO)
+    #         elif var.startswith('set level warning') == True:
+    #             print(f"Logging level set to WARNING")
+    #             logger.setLevel(logging.WARNING)
+    #         elif var.startswith('set level error') == True:
+    #             print(f"Logging level set to ERROR")
+    #             logger.setLevel(logging.ERROR)
+    #         elif var.startswith('set level critical') == True:
+    #             print(f"Logging level set to CRITICAL")
+    #             logger.setLevel(logging.CRITICAL)
+    #         else:
+    #             print("Unknown command")
+    #     except KeyboardInterrupt:
+    #         print("MAIN-LOOP : KeyboardInterrupt !")
+    #         stop_thread = True
 
-    thread.join()
+    # thread.join()
 
-    client.loop_stop()
-    client.disconnect()
+    # client.loop_stop()
+    # client.disconnect()
 
-    logger.info('Program terminated')
+    # logger.info('Program terminated')
