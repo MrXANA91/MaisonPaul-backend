@@ -1,11 +1,15 @@
 import argparse
-import os
-import sqlite3
-import threading
-import time
 import paho.mqtt.client as mqtt
-import logging
+import sqlite3
+import requests
+import json
+import time
+import threading
+import os
+import uuid
+import time
 from datetime import datetime
+import logging
 
 # Argument parsing management
 parser = argparse.ArgumentParser(description='Python script authentication')
@@ -24,29 +28,29 @@ logging.basicConfig(filename='test.log',level=logging.ERROR,
 logger = logging.getLogger("Test-logger")
 logger.setLevel(logging.ERROR)
 
-# Chemin vers le répertoire contenant le fichier maisonpaul.db
-db_directory = os.path.join(os.path.dirname(__file__), '..', 'db')
+# # Chemin vers le répertoire contenant le fichier maisonpaul.db
+# db_directory = os.path.join(os.path.dirname(__file__), '..', 'db')
 
-# Chemin complet vers le fichier maisonpaul.db
-db_path = os.path.join(db_directory, 'maisonpaul.db')
+# # Chemin complet vers le fichier maisonpaul.db
+# db_path = os.path.join(db_directory, 'maisonpaul.db')
 
-# Connexion à la base de données
-new_conn = sqlite3.connect(db_path)
-new_cur = new_conn.cursor()
+# # Connexion à la base de données
+# new_conn = sqlite3.connect(db_path)
+# new_cur = new_conn.cursor()
 # new_cur.execute("CREATE TABLE IF NOT EXISTS HumidityTable (id INTEGER PRIMARY KEY AUTOINCREMENT, sensorid VARCHAR(50), humidity REAL, date DATETIME)")
 # new_cur.execute("CREATE TABLE IF NOT EXISTS TemperatureTable (id INTEGER PRIMARY KEY AUTOINCREMENT, sensorid VARCHAR(50), temperature REAL, date DATETIME)")
 # new_cur.execute("CREATE TABLE IF NOT EXISTS ActuatorsTable (id INTEGER PRIMARY KEY AUTOINCREMENT, actuatorid VARCHAR(50), value REAL, action VARCHAR(50), date DATETIME)")
 # print("SQL database initialized!")
 
-new_cur.execute("""
-SELECT date, temperature FROM TemperatureTable
-WHERE sensorid = 'station1' AND date >= datetime('now', '-6 months')
-""")
-rows = new_cur.fetchall()
-new_conn.close()
+# new_cur.execute("""
+# SELECT date, temperature FROM TemperatureTable
+# WHERE sensorid = 'station1' AND date >= datetime('now', '-6 months')
+# """)
+# rows = new_cur.fetchall()
+# new_conn.close()
 
-for row in rows:
-    print("Date: ", row[0], " Temperature: ", row[1])
+# for row in rows:
+#     print("Date: ", row[0], " Temperature: ", row[1])
 
 # # Client MQTT creation
 # client = mqtt.Client("MaisonPaul-backend-python")
@@ -64,12 +68,12 @@ for row in rows:
 #         print("Failed to connect to MQTT broker, trying again in 5 seconds...")
 #         time.sleep(5)  # Attend 5 secondes avant de réessayer
 
-def getFormattedTime(timestamp):
-    # Conversion du timestamp en datetime
-    dt_object = datetime.utcfromtimestamp(int(float(timestamp)))
-    # Formatage de l'objet datetime pour l'afficher comme une chaîne de caractères
-    formatted_time = dt_object.strftime('%Y-%m-%d %H:%M:%S')
-    return formatted_time
+# def getFormattedTime(timestamp):
+#     # Conversion du timestamp en datetime
+#     dt_object = datetime.utcfromtimestamp(int(float(timestamp)))
+#     # Formatage de l'objet datetime pour l'afficher comme une chaîne de caractères
+#     formatted_time = dt_object.strftime('%Y-%m-%d %H:%M:%S')
+#     return formatted_time
 
 # def execute_sql(sql, params):
 #     print("Connecting to database...")
