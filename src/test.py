@@ -11,22 +11,35 @@ import time
 from datetime import datetime
 import logging
 
-# Argument parsing management
-parser = argparse.ArgumentParser(description='Python script authentication')
-parser.add_argument('--mqttaddress', dest='mqttaddress', type=str, help='IP address of the MQTT broker')
-parser.add_argument('--mqttusername', dest='mqttusername', type=str, help='Username to use for MQTT broker authentication')
-parser.add_argument('--mqttpwd', dest='mqttpwd', type=str, help='Password to use for MQTT broker authentication')
-parser.add_argument('--weatherappid', dest='weatherappid', type=str, help='App ID for OpenWeatherAPI authentication')
-parser.add_argument('--weatherapplat', dest='weatherapplat', type=str, help='Latitude for the OpenWeatherAPI request')
-parser.add_argument('--weatherapplon', dest='weatherapplon', type=str, help='Longitude for the OpenWeatherAPI request')
+# Environment variables retrieval
+mqttaddress = os.environ.get('MAISONPAULBACKEND_MQTT_HOST')
+mqttport = os.environ.get('MAISONPAULBACKEND_MQTT_PORT')
+mqttclientname = os.environ.get('MAISONPAULBACKEND_MQTT_CLIENT')
+mqttusername = os.environ.get('MAISONPAULBACKEND_MQTT_USER')
+mqttpwd = os.environ.get('MAISONPAULBACKEND_MQTT_PASSWORD')
 
-args = parser.parse_args()
+# weatherappid = os.environ.get('MAISONPAULBACKEND_OPENWEATHERAPI_APIKEY')
+# weatherapplat = os.environ.get('MAISONPAULBACKEND_OPENWEATHERAPI_LAT')
+# weatherapplon = os.environ.get('MAISONPAULBACKEND_OPENWEATHERAPI_LON')
 
-# Logging management
-logging.basicConfig(filename='test.log',level=logging.ERROR,
-                    format='%(asctime)s %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-logger = logging.getLogger("Test-logger")
-logger.setLevel(logging.ERROR)
+def checkEnvVar():
+    if (mqttaddress == None): exit(1)
+    if (mqttport == None): exit(2)
+    if (mqttclientname == None): exit(3)
+    if (mqttusername == None): exit(4)
+    if (mqttpwd == None): exit(5)
+    # if (weatherappid == None): exit(6)
+    # if (weatherapplat == None): exit(7)
+    # if (weatherapplon == None): exit(8)
+
+def on_message(client, userdata, msg):
+    print(str(msg.topic), " MQTT topic just got : ", str(msg.payload))
+
+# # Logging management
+# logging.basicConfig(filename='test.log',level=logging.ERROR,
+#                     format='%(asctime)s %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+# logger = logging.getLogger("Test-logger")
+# logger.setLevel(logging.ERROR)
 
 # # Chemin vers le répertoire contenant le fichier maisonpaul.db
 # db_directory = os.path.join(os.path.dirname(__file__), '..', 'db')
@@ -52,21 +65,32 @@ logger.setLevel(logging.ERROR)
 # for row in rows:
 #     print("Date: ", row[0], " Temperature: ", row[1])
 
-# # Client MQTT creation
-# client = mqtt.Client("MaisonPaul-backend-python")
+# Client MQTT creation
+client = mqtt.Client("MaisonPaul-backend-python")
 
-# # Connection to the MQTT broker
-# print("Connecting to the MQTT broker...")
-# client.username_pw_set(args.mqttusername, args.mqttpwd)
+# Connection to the MQTT broker
+print("Connecting to the MQTT broker...")
+client.username_pw_set(mqttusername, mqttpwd)
 
-# while True:
-#     try:
-#         client.connect(args.mqttaddress, port=1883)
-#         print("Connected!")
-#         break  # Si la connexion réussit, on sort de la boucle
-#     except Exception as e:
-#         print("Failed to connect to MQTT broker, trying again in 5 seconds...")
-#         time.sleep(5)  # Attend 5 secondes avant de réessayer
+while True:
+    try:
+        client.connect(mqttaddress, int(mqttport))
+        print("Connected!")
+        break  # Si la connexion réussit, on sort de la boucle
+    except Exception as e:
+        print("Failed to connect to MQTT broker, trying again in 5 seconds...")
+        time.sleep(5)  # Attend 5 secondes avant de réessayer
+
+# Topic subscription
+print("Subscribing to MQTT topics...")
+client.subscribe("testTopic")
+print("Subscription complete!")
+
+# Registering callback function
+client.on_message = on_message
+
+# MQTT client loop
+client.loop_forever()
 
 # def getFormattedTime(timestamp):
 #     # Conversion du timestamp en datetime
