@@ -6,4 +6,4 @@ WORKDIR /MaisonPaul
 
 COPY ./production ./production
 
-CMD ["python3.9", "./production/maisonpaul.py"]
+CMD ["python3.9", "-u", "./production/maisonpaul.py"]
