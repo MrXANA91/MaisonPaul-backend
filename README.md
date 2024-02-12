@@ -13,7 +13,8 @@ This script will be used to complete the migration from Node-RED to Python
 # Installation
 - Copy `src/maisonpaul.py` into a `production` folder at the root of this repo
 - Create a `maisonpaul.db` SQLite3 file inside a `db` folder at the root of this repo
-- Still at the root of this repo, launch using a Docker Compose file :
+- See https://hub.docker.com/_/eclipse-mosquitto on how to setup the MQTT broker
+- At the root of this repo, launch using a Docker Compose file :
 
 ```yaml
 version: '3.8'
@@ -33,10 +34,21 @@ services:
       - MAISONPAULBACKEND_OPENWEATHERAPI_LAT=LAT # replace with GPS Latitude
       - MAISONPAULBACKEND_OPENWEATHERAPI_LON=LON # replace with GPS Longitude
     volumes:
-      - ./db:/MaisonPaul/db # replace with 
-
+      - /path/to/db:/MaisonPaul/db # replace with the path where the SQLite3 file will be located
+    depends_on:
+      - maisonpaul-mqtt
+  maisonpaul-mqtt:
+    image: eclipse-mosquitto:latest
+    container_name: maisonpaul-mqtt
+    restart: unless-stopped
+    volumes:
+      - /path/to/mosquitto/config:/mosquitto/config # replace with the path to the Mosquitto folder
+      - /path/to/mosquitto/data:/mosquitto/data # replace with the path to the Mosquitto folder
+      - /path/to/mosquitto/log:/mosquitto/log # replace with the path to the Mosquitto folder
+    ports:
+      - 1883:1883
+      - 9001:9001
 ```
 
 # Future
-- The docker-compose will include the MQTT broker
 - The docker-compose will include a database (MariaDB probably)
